@@ -10,19 +10,15 @@ load_dotenv()
 
 class AIInterviewer:
     def __init__(self):
-        self.candidate_name = None
-        self.job_position = None
-        self.interview_stage = "introduction"
-        self.memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
-        self.resume_entities = None
-
+        self.initialize_session()
+        
         self.llm = HuggingFaceEndpoint(
             repo_id="mistralai/Mixtral-8x7B-Instruct-v0.1",
             max_length=2000,
             temperature=0.7,
             token=os.environ.get('HUGGINGFACEHUB_API_TOKEN')
         )
-        
+
         self.question_generator_template = """
         You are an expert AI interviewer conducting a job interview for the position of {job_position}.
         
@@ -55,6 +51,16 @@ class AIInterviewer:
             verbose=False
         )
     
+    def initialize_session(self):
+        """Initialize or reset the session state"""
+        self.candidate_name = None
+        self.job_position = None
+        self.interview_stage = "introduction"
+        self.last_question = ""
+        self.memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
+        self.resume_entities = None
+        print("\n[System] New interview session initialized\n")
+    
     def set_resume_entities(self, resume_entities):
         """Set resume information extracted by the platform"""
         self.resume_entities = resume_entities
@@ -70,12 +76,15 @@ class AIInterviewer:
         
         if self.interview_stage == "introduction":
             if not self.candidate_name:
-                return "Hello! I'm your AI interviewer today. Could you please tell me your name?"
+                self.last_question = "Hello! I'm your AI interviewer today. Could you please tell me your name?"
+                return self.last_question
             elif not self.job_position:
-                return f"Nice to meet you, {self.candidate_name}! What position are you applying for?"
+                self.last_question = f"Nice to meet you, {self.candidate_name}! What position are you applying for?"
+                return self.last_question
             else:
                 self.interview_stage = "general_questions"
-                return f"Thank you, {self.candidate_name}. Let's begin the interview for the {self.job_position} position. Could you tell me a bit about yourself and your professional background?"
+                self.last_question = f"Thank you, {self.candidate_name}. Let's begin the interview for the {self.job_position} position. Could you tell me a bit about yourself and your professional background?"
+                return self.last_question
         
         response = self.question_chain.run(
             job_position=job_position,
@@ -85,6 +94,7 @@ class AIInterviewer:
             resume_info=resume_info
         )
         
+        self.last_question = response
         return response
     
     def advance_stage(self):
@@ -100,7 +110,7 @@ class AIInterviewer:
     def process_response(self, response):
         """Process candidate's response and update interview state"""
         self.memory.save_context(
-            {"input": self.get_last_question()},
+            {"input": self.last_question},
             {"output": response}
         )
         
@@ -110,7 +120,6 @@ class AIInterviewer:
                 return self.get_next_question()
             elif not self.job_position:
                 self.job_position = response.strip()
-                self.interview_stage = "general_questions"
                 return self.get_next_question()
         
         if self.interview_stage != "closing":
@@ -146,15 +155,6 @@ class AIInterviewer:
                 self.advance_stage()
         
         return self.get_next_question()
-    
-    def get_last_question(self):
-        """Get the last question asked by the interviewer"""
-        chat_history = self.memory.load_memory_variables({})["chat_history"]
-        if chat_history and len(chat_history) > 0:
-            for msg in reversed(chat_history):
-                if msg.type == "human":
-                    return msg.content
-        return ""
 
 def run_interview():
     print("\n" + "="*50)
@@ -162,7 +162,7 @@ def run_interview():
     print("="*50 + "\n")
     
     interviewer = AIInterviewer()
-
+    
     sample_resume_info = {
         "skills": ["Python", "Data Analysis", "Machine Learning", "SQL", "Project Management"],
         "experience": [
@@ -183,25 +183,40 @@ def run_interview():
     
     while interview_active:
         question = interviewer.get_next_question()
+        
         print("\n🤖 AI Interviewer:", end=" ")
         for char in question:
             print(char, end="", flush=True)
             time.sleep(0.01)
         print("\n")
+        
         response = input("👤 You: ")
+        
+        if response.lower() == "/restart":
+            interviewer.initialize_session()
+            interviewer.set_resume_entities(sample_resume_info)
+            continue
+        elif response.lower() == "/exit":
+            interview_active = False
+            continue
+    
         if "thank you for your time" in question.lower() or "interview is complete" in question.lower():
             interview_active = False
+            new_interview = input("\nInterview completed. Start a new interview? (y/n): ")
+            if new_interview.lower() == 'y':
+                interviewer.initialize_session()
+                interviewer.set_resume_entities(sample_resume_info)
+                interview_active = True
+                continue
         if interview_active:
             interviewer.process_response(response)
     
     print("\n")
     print("INTERVIEW COMPLETED")
     print("\n")
-
     print("Interview Summary:")
     print(f"Candidate: {interviewer.candidate_name}")
     print(f"Position: {interviewer.job_position}")
-    
     print("\nInterview Transcript:")
     chat_history = interviewer.memory.load_memory_variables({})["chat_history"]
     for i, msg in enumerate(chat_history):
