@@ -39,13 +39,6 @@ HUGGINGFACEHUB_API_TOKEN = "your-token-here"
 
 ## Usage
 
-### Resume Analysis
-1. Place PDF resumes in the `resumes` directory
-2. Run the resume analyzer:
-```bash
-python resume_summary.py
-```
-
 ### AI Interviewer
 1. Run the interviewer:
 ```bash
@@ -70,3 +63,7 @@ python AI_Interviewer.py
 - Resume Analysis: Mistral-7B-Instruct-v0.3
 - Interviewer: Mixtral-8x7B-Instruct-v0.1
 - Embeddings: sentence-transformers/all-MiniLM-L6-v2
+
+## Additional Notes
+
+A prototype has been deployed for this application which is attached with this GitHub repo, the above steps are given for running the AI Interviewer which is not yet integrated in the website but it will added later.
