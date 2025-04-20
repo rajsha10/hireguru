@@ -21,6 +21,9 @@ HireGuru is an intelligent recruitment platform that combines resume analysis an
 ## Setup
 
 1. Clone the repository
+```bash
+https://github.com/rajsha10/hireguru.git
+```
 2. Install dependencies:
 ```bash
 pip install langchain PyPDF2 faiss-cpu python-dotenv pyttsx3
