@@ -23,6 +23,7 @@ HireGuru is an intelligent recruitment platform that combines resume analysis an
 1. Clone the repository
 ```bash
 https://github.com/rajsha10/hireguru.git
+cd hireguru
 ```
 2. Install dependencies:
 ```bash
