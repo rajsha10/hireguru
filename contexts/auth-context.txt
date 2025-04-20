@@ -1,0 +1,197 @@
+"use client"
+
+import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
+import { useRouter } from "next/navigation"
+import { useToast } from "@/hooks/use-toast"
+
+interface User {
+  id: string
+  name: string
+  email: string
+  role: "candidate" | "hr"
+  company?: string
+}
+
+interface AuthContextType {
+  user: User | null
+  isLoading: boolean
+  login: (email: string, password: string) => Promise<void>
+  signup: (userData: SignupData) => Promise<void>
+  logout: () => Promise<void>
+}
+
+interface SignupData {
+  name: string
+  email: string
+  password: string
+  role: "candidate" | "hr"
+  company?: string
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined)
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<User | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const router = useRouter()
+  const { toast } = useToast()
+
+  const checkAuthStatus = async () => {
+    try {
+      const response = await fetch("/api/auth/me", {
+        credentials: 'include'
+      })
+      if (response.ok) {
+        const data = await response.json()
+        // Additional validation to ensure user data has required fields
+        if (data.user && data.user.role) {
+          setUser(data.user)
+        } else {
+          setUser(null)
+          console.error("User data missing required fields:", data.user)
+        }
+      } else {
+        setUser(null)
+      }
+    } catch (error) {
+      console.error("Auth check error:", error)
+      setUser(null)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    checkAuthStatus()
+  }, [])
+
+  const login = async (email: string, password: string) => {
+    setIsLoading(true)
+    try {
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: 'include',
+        body: JSON.stringify({ email, password }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || "Login failed")
+      }
+
+      setUser(data.user)
+      await checkAuthStatus()
+
+      toast({
+        title: "Login successful",
+        description: `Welcome back, ${data.user.name}!`,
+      })
+
+      // Navigate based on role
+      if (data.user.role === "candidate") {
+        router.push("/candidate-dashboard")
+      } else if (data.user.role === "hr") {
+        router.push("/hr-dashboard")
+      } else {
+        console.error("Invalid user role:", data.user.role)
+        router.push("/")
+      }
+
+    } catch (error: any) {
+      toast({
+        title: "Login failed",
+        description: error.message,
+        variant: "destructive",
+      })
+      throw error
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const signup = async (userData: SignupData) => {
+    setIsLoading(true)
+    try {
+      const response = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: 'include',
+        body: JSON.stringify(userData),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || "Signup failed")
+      }
+
+      setUser(data.user)
+      await checkAuthStatus()
+
+      toast({
+        title: "Account created",
+        description: "Your account has been created successfully!",
+      })
+
+      // Navigate based on role
+      if (userData.role === "candidate") {
+        router.push("/candidate-dashboard")
+      } else if (userData.role === "hr") {
+        router.push("/hr-dashboard")
+      } else {
+        console.error("Invalid user role:", userData.role)
+        router.push("/")
+      }
+    } catch (error: any) {
+      toast({
+        title: "Signup failed",
+        description: error.message,
+        variant: "destructive",
+      })
+      throw error
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const logout = async () => {
+    try {
+      await fetch("/api/auth/logout", {
+        method: "POST",
+        credentials: 'include'
+      })
+      setUser(null)
+      router.push("/")
+      toast({
+        title: "Logged out",
+        description: "You have been logged out successfully.",
+      })
+    } catch (error: any) {
+      toast({
+        title: "Logout failed",
+        description: error.message,
+        variant: "destructive",
+      })
+    }
+  }
+
+  return (
+    <AuthContext.Provider value={{ user, isLoading, login, signup, logout }}>
+      {children}
+    </AuthContext.Provider>
+  )
+}
+
+export function useAuth() {
+  const context = useContext(AuthContext)
+  if (context === undefined) {
+    throw new Error("useAuth must be used within an AuthProvider")
+  }
+  return context
+}

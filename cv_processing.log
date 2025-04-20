@@ -1,0 +1,29 @@
+2025-04-19 21:05:18,152 - cv_processor - INFO - Starting CV processing
+2025-04-19 21:05:18,152 - cv_processor - INFO - Processing CV: D:\aignite\hireguru2\python_backend\uploads\cv_1745076913141.pdf
+2025-04-19 21:05:18,152 - cv_processor - INFO - Summary ID: 6803c2b1329b38b9467c7d6b
+2025-04-19 21:05:18,152 - cv_processor - INFO - Extracting text from PDF: D:\aignite\hireguru2\python_backend\uploads\cv_1745076913141.pdf
+2025-04-19 21:05:18,310 - cv_processor - INFO - Successfully extracted 2315 characters from PDF
+2025-04-19 21:05:18,310 - cv_processor - INFO - Processing extracted text
+2025-04-19 21:05:18,311 - cv_processor - INFO - Splitting text into chunks, total length: 2315
+2025-04-19 21:05:18,311 - cv_processor - INFO - Split text into 1 chunks
+2025-04-19 21:05:18,311 - cv_processor - INFO - Creating vector store from text chunks
+2025-04-19 21:05:26,234 - sentence_transformers.SentenceTransformer - INFO - Load pretrained SentenceTransformer: sentence-transformers/all-MiniLM-L6-v2
+2025-04-19 21:05:27,177 - sentence_transformers.SentenceTransformer - INFO - Use pytorch device: cpu
+2025-04-19 21:05:27,602 - faiss.loader - INFO - Loading faiss with AVX2 support.
+2025-04-19 21:05:27,602 - faiss.loader - INFO - Could not load library with AVX2 support due to:
+ModuleNotFoundError("No module named 'faiss.swigfaiss_avx2'")
+2025-04-19 21:05:27,602 - faiss.loader - INFO - Loading faiss.
+2025-04-19 21:05:27,677 - faiss.loader - INFO - Successfully loaded faiss.
+2025-04-19 21:05:27,686 - cv_processor - INFO - Vector store created successfully
+2025-04-19 21:05:27,686 - cv_processor - INFO - Generating summary from text
+2025-04-19 21:05:27,686 - cv_processor - INFO - Initializing HuggingFace model
+2025-04-19 21:05:28,595 - cv_processor - INFO - Creating prompt for model
+2025-04-19 21:05:28,595 - cv_processor - INFO - Sending prompt to model
+2025-04-19 21:05:28,960 - cv_processor - ERROR - Error generating response: Error raised by inference API: Cannot override task for LLM models
+2025-04-19 21:05:28,960 - cv_processor - INFO - Updating MongoDB with generated summary
+2025-04-19 21:05:28,960 - cv_processor - INFO - Updating MongoDB with summary for ID: 6803c2b1329b38b9467c7d6b
+2025-04-19 21:05:28,961 - cv_processor - INFO - Connecting to MongoDB: mongodb+srv://entraj***
+2025-04-19 21:05:29,194 - cv_processor - INFO - Connected to MongoDB successfully
+2025-04-19 21:05:29,195 - cv_processor - ERROR - Error updating MongoDB: No default database name defined or provided.
+2025-04-19 21:05:29,195 - cv_processor - INFO - Closing MongoDB connection
+2025-04-19 21:05:29,195 - cv_processor - WARNING - CV processing completed but MongoDB update may have failed
